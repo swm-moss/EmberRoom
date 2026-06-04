@@ -295,36 +295,39 @@ export function StudyRoomScene() {
           </div>
         ) : null}
 
-        {/* Layer 4 — 옆자리 NPC (미드그라운드) */}
-        <SceneSlot className="left-[6%] top-[30%] h-[15%] w-[20%]" depthFloat={shouldReduceMotion ? 0 : 1}>
+        {/* Layer 4 — 옆자리 NPC (책상 vignette, 메인 캐릭터보다 깊고 작게 좌우 배치) */}
+        <SceneSlot className="left-[1%] top-[39%] h-[27%] w-[31%]" depthFloat={shouldReduceMotion ? 0 : 0.8}>
           <SceneImage
             asset="/assets/npc/npc_01.png"
             alt="옆자리 NPC 1"
             fitAsset="contain"
+            position="object-bottom"
             placeholderLabel="NPC"
             placeholderIcon={UsersRound}
           />
         </SceneSlot>
-        <SceneSlot className="right-[6%] top-[26%] h-[15%] w-[20%]" depthFloat={shouldReduceMotion ? 0 : 1.4}>
+        <SceneSlot className="right-[1%] top-[42%] h-[25%] w-[29%]" depthFloat={shouldReduceMotion ? 0 : 1}>
           <SceneImage
             asset="/assets/npc/npc_02.png"
             alt="옆자리 NPC 2"
             fitAsset="contain"
+            position="object-bottom"
             placeholderLabel="NPC"
             placeholderIcon={UsersRound}
           />
         </SceneSlot>
 
-        {/* Layer 5 — 조교(좌우로 천천히 순찰) */}
+        {/* Layer 5 — 조교(올빼미, 좌우로 천천히 순찰) */}
         <motion.div
-          className="absolute top-[20%] h-[14%] w-[18%]"
-          animate={shouldReduceMotion ? { left: "10%" } : { left: ["8%", "70%", "8%"] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[40%] h-[17%] w-[15%]"
+          animate={shouldReduceMotion ? { left: "8%" } : { left: ["6%", "76%", "6%"] }}
+          transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
         >
           <SceneImage
             asset="/assets/assistant/assistant_walk.png"
             alt="조교 올빼미"
             fitAsset="contain"
+            position="object-bottom"
             placeholderLabel="조교"
             placeholderIcon={GraduationCap}
           />
