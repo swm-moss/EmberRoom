@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #fff7e8;
+  --cream: #fff7e8;
+  --muted: #76573f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #fff7e8;
+  color: #3b281d;
+  font-family:
+    "Pretendard",
+    "Inter",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    system-ui,
+    sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(251, 146, 60, 0.34);
+  color: #3b281d;
+}
+
+.room-grid {
+  background-image:
+    linear-gradient(rgba(255, 244, 219, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 244, 219, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.soft-lamp {
+  box-shadow:
+    0 0 24px rgba(251, 146, 60, 0.42),
+    0 0 72px rgba(251, 146, 60, 0.22);
+}
+
+.rain-lines {
+  background-image: repeating-linear-gradient(
+    105deg,
+    rgba(174, 211, 220, 0.32) 0 1px,
+    transparent 1px 15px
+  );
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: #fdba74;
+}
+
+.ambient-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: #ea6f16;
+  border: 2px solid #fffaf0;
+  box-shadow: 0 2px 8px rgba(117, 78, 34, 0.32);
+  cursor: pointer;
+}
+
+.ambient-slider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: #ea6f16;
+  border: 2px solid #fffaf0;
+  box-shadow: 0 2px 8px rgba(117, 78, 34, 0.32);
+  cursor: pointer;
+}
