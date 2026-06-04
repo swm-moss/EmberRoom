@@ -3,31 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import {
-  Coffee,
-  Film,
-  GraduationCap,
-  PenLine,
-  Phone,
-  Play,
-  RotateCcw,
-  Sparkles,
-  Timer,
-  UsersRound,
-  X,
-  type LucideIcon
-} from "lucide-react";
+import { Coffee, Film, PenLine, Phone, Play, RotateCcw, Sparkles, Timer, X, type LucideIcon } from "lucide-react";
 
 type SceneState = "study" | "phone" | "break" | "complete";
 
 type StateConfig = {
   label: string;
-  asset: string; // 최종 에셋(투명 PNG) 슬롯
-  fallback: string; // 에셋 없을 때 임시로 보여줄 기존 이미지
+  asset: string;
+  fallback: string;
   bubble: string;
   caption: string;
   icon: LucideIcon;
-  dim: number; // 방을 얼마나 어둡게 할지 (0~1)
+  dim: number; // 앱 밖일수록 살짝 포근하게 어두워짐 (고양이 스프처럼 과하지 않게)
 };
 
 const STATE_CONFIG: Record<SceneState, StateConfig> = {
@@ -47,7 +34,7 @@ const STATE_CONFIG: Record<SceneState, StateConfig> = {
     bubble: "앱 밖으로 나갔어요…",
     caption: "앱 밖 — 캐릭터도 폰 보는 중",
     icon: Phone,
-    dim: 0.5
+    dim: 0.24
   },
   break: {
     label: "휴식 중",
@@ -56,14 +43,14 @@ const STATE_CONFIG: Record<SceneState, StateConfig> = {
     bubble: "따뜻한 거 한 모금.",
     caption: "잠깐 숨 고르는 중",
     icon: Coffee,
-    dim: 0.16
+    dim: 0.08
   },
   complete: {
     label: "완료",
     asset: "/assets/character/me_complete.png",
     fallback: "/images/character-complete.png",
     bubble: "오늘도 해냈어요!",
-    caption: "세션 완료 — 방이 밝아졌어요",
+    caption: "세션 완료 — 방이 환해졌어요",
     icon: Sparkles,
     dim: 0
   }
@@ -71,22 +58,20 @@ const STATE_CONFIG: Record<SceneState, StateConfig> = {
 
 const STATE_ORDER: SceneState[] = ["study", "phone", "break", "complete"];
 
-const PARTICLES = [
-  { left: "14%", size: 5, delay: 0, duration: 8 },
-  { left: "28%", size: 4, delay: 1.6, duration: 10 },
-  { left: "44%", size: 7, delay: 0.7, duration: 9 },
-  { left: "58%", size: 4, delay: 2.3, duration: 11 },
-  { left: "70%", size: 6, delay: 1.1, duration: 8.5 },
-  { left: "84%", size: 4, delay: 0.4, duration: 10.5 }
+const MOTES = [
+  { left: "16%", top: "30%", size: 4, delay: 0, duration: 9 },
+  { left: "30%", top: "18%", size: 3, delay: 2.2, duration: 11 },
+  { left: "62%", top: "24%", size: 5, delay: 1.1, duration: 10 },
+  { left: "74%", top: "14%", size: 3, delay: 3.0, duration: 12 },
+  { left: "46%", top: "12%", size: 4, delay: 1.7, duration: 10.5 }
 ];
 
-// 에셋 → 기존 이미지(임시) → 카드형 플레이스홀더 순으로 우아하게 폴백.
+// 에셋 → 기존 이미지(임시) → 카드형 플레이스홀더 순으로 폴백.
 function SceneImage({
   asset,
   fallback,
   alt,
-  fitAsset = "cover",
-  fitFallback = "cover",
+  fit = "cover",
   position = "object-center",
   placeholderLabel,
   placeholderIcon: Icon,
@@ -95,8 +80,7 @@ function SceneImage({
   asset: string;
   fallback?: string;
   alt: string;
-  fitAsset?: "cover" | "contain";
-  fitFallback?: "cover" | "contain";
+  fit?: "cover" | "contain";
   position?: string;
   placeholderLabel: string;
   placeholderIcon: LucideIcon;
@@ -110,21 +94,18 @@ function SceneImage({
 
   if (stage === "card" || (stage === "fallback" && !fallback)) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#2a201a]/80 text-center text-[#f3d9a5]">
-        <Icon aria-hidden className="h-7 w-7 opacity-80" />
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#e9dcc2]/70 text-center text-[#7c6a4a]">
+        <Icon aria-hidden className="h-7 w-7 opacity-70" />
         <p className="px-2 text-xs font-semibold leading-4">{placeholderLabel}</p>
-        <p className="text-[10px] text-[#caa97a]">에셋 넣으면 교체</p>
+        <p className="text-[10px] opacity-70">에셋 넣으면 교체</p>
       </div>
     );
   }
 
   const isAsset = stage === "asset";
-  const src = isAsset ? asset : (fallback as string);
-  const fit = isAsset ? fitAsset : fitFallback;
-
   return (
     <Image
-      src={src}
+      src={isAsset ? asset : (fallback as string)}
       alt={alt}
       fill
       priority={priority}
@@ -151,10 +132,6 @@ export function StudyRoomScene() {
     timeoutsRef.current = [];
   }, []);
 
-  const goTo = useCallback((next: SceneState) => {
-    setState(next);
-  }, []);
-
   // 자동 데모: 공부 → (앱 이탈) 폰 → 복귀 → 완료. 깔끔한 한 컷 촬영용.
   const playDemo = useCallback(() => {
     clearTimers();
@@ -164,18 +141,18 @@ export function StudyRoomScene() {
     setState("study");
 
     const steps: Array<{ at: number; run: () => void }> = [
-      { at: 2800, run: () => setState("phone") },
+      { at: 3000, run: () => setState("phone") },
       {
-        at: 5600,
+        at: 6000,
         run: () => {
           setState("study");
           setReturnToast(true);
           window.setTimeout(() => setReturnToast(false), 2600);
         }
       },
-      { at: 7600, run: () => setState("complete") },
+      { at: 8200, run: () => setState("complete") },
       {
-        at: 9800,
+        at: 10400,
         run: () => {
           setState("study");
           setPlaying(false);
@@ -183,10 +160,7 @@ export function StudyRoomScene() {
         }
       }
     ];
-
-    steps.forEach(({ at, run }) => {
-      timeoutsRef.current.push(window.setTimeout(run, at));
-    });
+    steps.forEach(({ at, run }) => timeoutsRef.current.push(window.setTimeout(run, at)));
   }, [clearTimers]);
 
   const stopDemo = useCallback(() => {
@@ -197,35 +171,26 @@ export function StudyRoomScene() {
 
   // 실제 앱 이탈 감지: 탭 전환/창 blur 시 캐릭터가 폰을 보게. 데모 재생 중엔 무시.
   useEffect(() => {
-    function handleHidden() {
+    function onVisibility() {
       if (playingRef.current) {
         return;
       }
       if (document.visibilityState === "hidden") {
         setState("phone");
-      }
-    }
-    function handleVisible() {
-      if (playingRef.current) {
-        return;
-      }
-      if (document.visibilityState === "visible") {
+      } else {
         setState("study");
         setReturnToast(true);
         window.setTimeout(() => setReturnToast(false), 2600);
       }
     }
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") {
-        handleHidden();
-      } else {
-        handleVisible();
-      }
-    });
-    return () => clearTimers();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearTimers();
+    };
   }, [clearTimers]);
 
-  // 녹화 모드: Esc 로 빠져나오기.
+  // 녹화 모드: Esc 로 종료.
   useEffect(() => {
     if (!recordMode) {
       return;
@@ -241,153 +206,99 @@ export function StudyRoomScene() {
 
   return (
     <main
-      className={`flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-[#15110d] px-4 ${
+      className={`flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-[#efe6d2] px-4 ${
         recordMode ? "py-0" : "py-6"
       }`}
     >
       {/* ───────── 9:16 무대 ───────── */}
       <div
-        className={`relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-[#3a2b1d] bg-[#0f0b08] shadow-[0_40px_140px_rgba(0,0,0,0.6)] ${
+        className={`relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-[#d9c8a6] bg-[#f4ead6] shadow-[0_40px_140px_rgba(120,96,55,0.35)] ${
           recordMode ? "h-screen rounded-none border-0" : "h-[88svh] max-h-[860px]"
         }`}
       >
-        {/* Layer 1 — 배경 플레이트 */}
+        {/* Layer 1 — 배경 (아주 느린 숨쉬기) */}
         <motion.div
           className="absolute inset-0"
-          animate={shouldReduceMotion ? undefined : { scale: [1.04, 1.07, 1.04] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          animate={shouldReduceMotion ? undefined : { scale: [1.02, 1.045, 1.02] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         >
           <SceneImage
             asset="/assets/scene/library_bg_portrait.png"
             fallback="/images/night-study-room.png"
-            alt="아늑한 도서관 배경"
-            placeholderLabel="도서관 배경"
+            alt="포근한 수채 공부방 배경"
+            placeholderLabel="공부방 배경"
             placeholderIcon={Timer}
             priority
           />
         </motion.div>
 
-        {/* Layer 2 — 햇살/램프 글로우 */}
+        {/* Layer 2 — 창가 햇살 (은은하게 호흡) */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,rgba(255,214,140,0.45),transparent_52%)] mix-blend-screen"
-          animate={shouldReduceMotion ? undefined : { opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,240,200,0.5),transparent_46%)] mix-blend-screen"
+          animate={shouldReduceMotion ? undefined : { opacity: [0.45, 0.7, 0.45] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        {/* Layer 3 — 빛 입자 */}
+        {/* Layer 3 — 부드러운 먼지 입자 */}
         {!shouldReduceMotion ? (
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            {PARTICLES.map((particle, index) => (
+            {MOTES.map((mote, index) => (
               <motion.span
                 key={index}
-                className="absolute bottom-[-12px] rounded-full bg-[#ffe7b0] blur-[1px]"
-                style={{ left: particle.left, width: particle.size, height: particle.size }}
-                animate={{ y: [0, -640], opacity: [0, 0.8, 0] }}
-                transition={{
-                  duration: particle.duration,
-                  delay: particle.delay,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
+                className="absolute rounded-full bg-[#fff3d6] blur-[1px]"
+                style={{ left: mote.left, top: mote.top, width: mote.size, height: mote.size }}
+                animate={{ y: [0, 26, 0], x: [0, 10, 0], opacity: [0.15, 0.6, 0.15] }}
+                transition={{ duration: mote.duration, delay: mote.delay, repeat: Infinity, ease: "easeInOut" }}
               />
             ))}
           </div>
         ) : null}
 
-        {/* Layer 4 — 옆자리 NPC (책상 vignette, 메인 캐릭터보다 깊고 작게 좌우 배치) */}
-        <SceneSlot className="left-[1%] top-[39%] h-[27%] w-[31%]" depthFloat={shouldReduceMotion ? 0 : 0.8}>
-          <SceneImage
-            asset="/assets/npc/npc_01.png"
-            alt="옆자리 NPC 1"
-            fitAsset="contain"
-            position="object-bottom"
-            placeholderLabel="NPC"
-            placeholderIcon={UsersRound}
-          />
-        </SceneSlot>
-        <SceneSlot className="right-[1%] top-[42%] h-[25%] w-[29%]" depthFloat={shouldReduceMotion ? 0 : 1}>
-          <SceneImage
-            asset="/assets/npc/npc_02.png"
-            alt="옆자리 NPC 2"
-            fitAsset="contain"
-            position="object-bottom"
-            placeholderLabel="NPC"
-            placeholderIcon={UsersRound}
-          />
-        </SceneSlot>
+        {/* Layer 4 — 메인 캐릭터(여우+책상 vignette): 숨쉬기 + 상태 크로스페이드 + 머그 김 */}
+        <div className="absolute inset-x-0 bottom-[2%] mx-auto aspect-square w-[92%]">
+          <motion.div
+            className="absolute inset-0"
+            animate={shouldReduceMotion ? undefined : { y: [0, -7, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={state}
+                className="absolute inset-0"
+                initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                transition={{ duration: 0.55, ease: "easeInOut" }}
+              >
+                <SceneImage
+                  asset={config.asset}
+                  fallback={config.fallback}
+                  alt={`내 캐릭터: ${config.label}`}
+                  fit="contain"
+                  position="object-bottom"
+                  placeholderLabel={`내 캐릭터 · ${config.label}`}
+                  placeholderIcon={config.icon}
+                  priority
+                />
+              </motion.div>
+            </AnimatePresence>
 
-        {/* Layer 5 — 조교(올빼미, 좌우로 천천히 순찰) */}
-        <motion.div
-          className="absolute top-[40%] h-[17%] w-[15%]"
-          animate={shouldReduceMotion ? { left: "8%" } : { left: ["6%", "76%", "6%"] }}
-          transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <SceneImage
-            asset="/assets/assistant/assistant_walk.png"
-            alt="조교 올빼미"
-            fitAsset="contain"
-            position="object-bottom"
-            placeholderLabel="조교"
-            placeholderIcon={GraduationCap}
-          />
-        </motion.div>
-
-        {/* Layer 6 — 메인 캐릭터 (상태별 크로스페이드 + 숨쉬기) */}
-        <div className="absolute inset-x-0 bottom-[8%] mx-auto h-[52%] w-[78%]">
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              key={state}
-              className="absolute inset-0"
-              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.98 }}
-              animate={
-                shouldReduceMotion
-                  ? { opacity: 1 }
-                  : { opacity: 1, y: [0, -8, 0], scale: 1 }
-              }
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
-              transition={{
-                opacity: { duration: 0.5 },
-                scale: { duration: 0.5 },
-                y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
-              }}
-            >
-              <SceneImage
-                asset={config.asset}
-                fallback={config.fallback}
-                alt={`내 캐릭터: ${config.label}`}
-                fitAsset="contain"
-                fitFallback="contain"
-                position="object-bottom"
-                placeholderLabel={`내 캐릭터 · ${config.label}`}
-                placeholderIcon={config.icon}
-                priority
-              />
-            </motion.div>
-          </AnimatePresence>
+            {/* 머그 김 (vignette 안 머그 위치에 맞춰 살짝) */}
+            {!shouldReduceMotion ? <Steam /> : null}
+          </motion.div>
         </div>
 
-        {/* Layer 7 — 전경 소품 */}
-        <SceneSlot className="bottom-[3%] left-[4%] h-[18%] w-[18%]" depthFloat={0}>
-          <SceneImage
-            asset="/assets/props/prop_plant.png"
-            alt="전경 화분"
-            fitAsset="contain"
-            placeholderLabel="소품"
-            placeholderIcon={Sparkles}
-          />
-        </SceneSlot>
-
-        {/* Layer 8 — 어두워짐(앱 밖) + 깊이감 비네트 */}
+        {/* Layer 5 — 앱 밖일 때 포근하게 어두워짐 + 깊이감 */}
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[#0a0712]"
+          className="pointer-events-none absolute inset-0 bg-[#3a2a16]"
           animate={{ opacity: config.dim }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0c0805]/70 via-transparent to-[#0c0805]/30"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#5a431f]/25 via-transparent to-[#5a431f]/12"
         />
 
         {/* ── 씬 UI (말풍선/타이머/캡션) — 녹화에 포함 ── */}
@@ -399,26 +310,26 @@ export function StudyRoomScene() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.92 }}
               transition={{ type: "spring", stiffness: 320, damping: 22 }}
-              className="max-w-[62%] rounded-2xl rounded-tl-sm bg-[#fff3dd]/95 px-3.5 py-2 text-sm font-bold text-[#352116] shadow-[0_14px_40px_rgba(0,0,0,0.35)]"
+              className="max-w-[62%] rounded-2xl rounded-tl-sm bg-[#fffaf0]/95 px-3.5 py-2 text-sm font-bold text-[#5a4327] shadow-[0_10px_30px_rgba(120,96,55,0.25)]"
             >
               {state === "phone" ? (
-                <Phone aria-hidden className="mb-0.5 mr-1 inline h-4 w-4 text-ember-700" />
+                <Phone aria-hidden className="mb-0.5 mr-1 inline h-4 w-4 text-[#b07b3a]" />
               ) : null}
               {config.bubble}
             </motion.div>
           </AnimatePresence>
 
-          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-[#dfbc8a]/40 bg-[#1d1510]/80 px-3 py-2 text-[#fff2dc] backdrop-blur">
-            <Timer aria-hidden className="h-4 w-4 text-ember-300" />
+          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-[#e0cba0] bg-[#fffaf0]/85 px-3 py-2 text-[#5a4327] backdrop-blur">
+            <Timer aria-hidden className="h-4 w-4 text-[#b07b3a]" />
             <span className="text-base font-black tabular-nums">25:00</span>
           </div>
         </div>
 
         <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex flex-col items-center gap-1.5 text-center">
-          <p className="rounded-full bg-[#1d1510]/80 px-3 py-1 text-xs font-semibold text-[#f5e1bf] backdrop-blur">
+          <p className="rounded-full bg-[#fffaf0]/85 px-3 py-1 text-xs font-semibold text-[#7c6038] backdrop-blur">
             {config.caption}
           </p>
-          <p className="text-base font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)] sm:text-lg">
+          <p className="text-base font-black text-[#43331c] drop-shadow-[0_1px_6px_rgba(255,250,240,0.7)] sm:text-lg">
             앱을 나가면, 내 캐릭터도 폰을 봅니다.
           </p>
         </div>
@@ -430,20 +341,19 @@ export function StudyRoomScene() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
-              className="pointer-events-none absolute bottom-[16%] left-1/2 -translate-x-1/2 rounded-full bg-[#22372f]/95 px-4 py-2 text-sm font-bold text-teal-100 shadow-lamp"
+              className="pointer-events-none absolute bottom-[15%] left-1/2 -translate-x-1/2 rounded-full bg-[#5b6b4a]/95 px-4 py-2 text-sm font-bold text-[#f3f6ea] shadow-[0_10px_30px_rgba(80,70,40,0.3)]"
             >
               조교: “다시 와주셨네요.”
             </motion.div>
           ) : null}
         </AnimatePresence>
 
-        {/* 녹화 모드 종료 버튼 */}
         {recordMode ? (
           <button
             type="button"
             onClick={() => setRecordMode(false)}
             aria-label="녹화 모드 종료 (Esc)"
-            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white/80 transition hover:bg-black/60"
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/80 transition hover:bg-black/50"
           >
             <X aria-hidden className="h-4 w-4" />
           </button>
@@ -464,12 +374,12 @@ export function StudyRoomScene() {
                   type="button"
                   onClick={() => {
                     stopDemo();
-                    goTo(key);
+                    setState(key);
                   }}
                   className={`flex min-h-11 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2 text-xs font-bold transition ${
                     active
-                      ? "border-ember-300 bg-ember-400 text-[#2a1710]"
-                      : "border-[#3a2b1d] bg-[#1d1510] text-[#e7cda3] hover:border-ember-400"
+                      ? "border-[#c79a52] bg-[#e9c987] text-[#4a3618]"
+                      : "border-[#d9c8a6] bg-[#fffaf0] text-[#7c6038] hover:border-[#c79a52]"
                   }`}
                 >
                   <Icon aria-hidden className="h-4 w-4" />
@@ -483,7 +393,7 @@ export function StudyRoomScene() {
             <button
               type="button"
               onClick={playing ? stopDemo : playDemo}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-ember-400 px-4 text-sm font-bold text-[#28170f] transition hover:bg-ember-300"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#d99a4e] px-4 text-sm font-bold text-[#3a2a12] transition hover:bg-[#e4a85f]"
             >
               {playing ? (
                 <>
@@ -500,16 +410,16 @@ export function StudyRoomScene() {
             <button
               type="button"
               onClick={() => setRecordMode(true)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#3a2b1d] bg-[#1d1510] px-4 text-sm font-bold text-[#e7cda3] transition hover:border-ember-400"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-[#d9c8a6] bg-[#fffaf0] px-4 text-sm font-bold text-[#7c6038] transition hover:border-[#c79a52]"
             >
               <Film aria-hidden className="h-4 w-4" />
               녹화 모드
             </button>
           </div>
 
-          <p className="text-center text-xs leading-5 text-[#8a7459]">
+          <p className="text-center text-xs leading-5 text-[#9a8763]">
             탭을 전환하거나 창을 벗어나면 캐릭터가 실제로 폰을 봐요. ·{" "}
-            <span className="text-[#b9a07f]">에셋을 `public/assets/`에 넣으면 자동 교체됩니다.</span>
+            <span className="text-[#b39a6f]">에셋을 `public/assets/`에 덮어쓰면 자동 교체됩니다.</span>
           </p>
         </div>
       ) : null}
@@ -517,23 +427,24 @@ export function StudyRoomScene() {
   );
 }
 
-// 미세하게 떠 있는 슬롯 래퍼.
-function SceneSlot({
-  className,
-  depthFloat,
-  children
-}: {
-  className: string;
-  depthFloat: number;
-  children: React.ReactNode;
-}) {
+// 머그에서 모락모락 올라오는 김 (vignette 좌측 하단 머그 위치 근사).
+function Steam() {
+  const wisps = [
+    { left: "23%", delay: 0 },
+    { left: "26%", delay: 1.2 },
+    { left: "20%", delay: 2.1 }
+  ];
   return (
-    <motion.div
-      className={`absolute overflow-hidden ${className}`}
-      animate={depthFloat ? { y: [0, -depthFloat * 6, 0] } : undefined}
-      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-    >
-      {children}
-    </motion.div>
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {wisps.map((wisp, index) => (
+        <motion.span
+          key={index}
+          className="absolute h-8 w-1.5 rounded-full bg-[#fff7e8] blur-[3px]"
+          style={{ left: wisp.left, top: "52%" }}
+          animate={{ y: [0, -34], opacity: [0, 0.5, 0], scaleX: [1, 1.6, 2.2] }}
+          transition={{ duration: 4.5, delay: wisp.delay, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
+    </div>
   );
 }
