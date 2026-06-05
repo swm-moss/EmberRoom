@@ -1,5 +1,5 @@
-import { LandingPage } from "@/components/LandingPage";
+import { StudyRoomScene } from "@/components/StudyRoomScene";
 
 export default function Home() {
-  return <LandingPage />;
+  return <StudyRoomScene />;
 }
